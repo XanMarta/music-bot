@@ -10,6 +10,7 @@ class BotModule:
         self.token = ''
         self.bot = commands.Bot(command_prefix='>', help_command=None)
         self.prefix = '>'
+        self.__read_data()
 
     def __read_data(self):
         if os.path.isfile('config/token.json'):
@@ -67,7 +68,6 @@ class BotModule:
                 await getattr(self, cmd)(ctx, args)
 
     def start_bot(self):
-        self.__read_data()
         self.__set_command()
         print('Starting bot ...')
         self.bot.run(self.token)

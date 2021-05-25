@@ -44,6 +44,11 @@ class Playlist(BotModule):
 
     # Command
 
+    def change_source(self, source):
+        self.song_list.clear()
+        self.source_path = source
+        self.current_path = ""
+
     async def __search(self, ctx, arg):
         if arg == "":
             pass
