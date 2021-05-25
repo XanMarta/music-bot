@@ -12,9 +12,11 @@ def command(_pr):
             print('Source changed to', new_path)
 
 
-def start_program(token=''):
+def start_program(token='', source=''):
     pr = MainProgram()
     if token != '':
         pr.token = token
+    if source != '':
+        pr.change_source(source)
     threading.Thread(target=command, args=[pr, ]).start()
     pr.start()
