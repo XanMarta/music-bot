@@ -29,6 +29,8 @@ class MainProgram(MusicPlayer, Playlist):
             cmd += f"{c}shuffle\n"; desc += "Randomly shuffle the current playlist\n"
             cmd += f"{c}delete *<from> [to]*\n"; desc += "Delete songs from current playlist\n"
             cmd += f"{c}clear\n"; desc += "Clear the current playlist\n"
+            cmd += f"{c}sort\n"; desc += "Sort the current playlist alphabetically\n"
+            cmd += f"{c}next *<index>*\n"; desc += "Move a song in the current playlist to the top\n"
             e = Embed()
             e.title = "COMMAND LIST"
             e.add_field(name='COMMAND', value=cmd)

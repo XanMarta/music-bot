@@ -10,6 +10,7 @@ class Playlist(BotModule):
         self.current_path = ""
         self.song_list = []
         self.playing = None
+        self.formats = ['.mp3', '.mp4', '.wav', '.flac', '.wma', '.ogg', '.m4a', '.webm']
 
     async def __get_song(self, ctx, index, song_list):
         if len(song_list) == 0:
@@ -32,7 +33,12 @@ class Playlist(BotModule):
         parent_path = os.path.join(self.source_path, t_path)
         for name in os.listdir(parent_path):
             path = os.path.join(parent_path, name)
-            _type = "folder" if os.path.isdir(path) else "file"
+            if os.path.isfile(path):
+                _type = "file"
+                if os.path.splitext(name)[1].lower() not in self.formats:
+                    continue
+            else:
+                _type = "folder"
             temp_path = os.path.join(t_path, name)
             song_list.append({
                 "name": name,
@@ -68,11 +74,24 @@ class Playlist(BotModule):
                     await self.send_back(ctx, 'Can not list file path')
                     return
         self.song_list = self.__retrieve_list(self.current_path).copy()
+        folder_count = file_count = word_count = 0
+        for song in self.song_list:
+            if song['type'] == "folder":
+                folder_count += 1
+            else:
+                file_count += 1
         msg = f"        **FILE LIST FROM /{self.current_path}**\n\n"
         msg += ("0  -  ...\n" if self.current_path != "" else "")
         for count in range(len(self.song_list)):
             song = self.song_list[count]
-            msg += f"{count + 1}  -  {song['name']}" + ("/" if song['type'] == "folder" else "") + '\n'
+            new_msg = f"{count + 1}  -  {song['name']}" + ("/" if song['type'] == "folder" else "") + '\n'
+            if word_count + len(new_msg) > 1800:
+                msg += '..................\n'
+                break
+            else:
+                msg += new_msg
+                word_count += len(new_msg)
+        msg += f"\n*{folder_count} folders and {file_count} songs found*"
         await self.send_back(ctx, msg)
 
     async def __add(self, ctx, arg):
@@ -100,9 +119,17 @@ class Playlist(BotModule):
         if len(self.queue) == 0:
             msg += "*(empty)*"
         else:
+            word_count = 0
             for count in range(len(self.queue)):
                 song = self.queue[count]
-                msg += f"{count + 1}  -  {song['name']}\n"
+                new_msg = f"{count + 1}  -  {song['name']}\n"
+                if word_count + len(new_msg) > 1800:
+                    msg += '..................\n'
+                    break
+                else:
+                    msg += new_msg
+                    word_count += len(new_msg)
+            msg += f'\n*{len(self.queue)} songs in playlist*'
         await self.send_back(ctx, msg)
 
     async def __shuffle(self, ctx, arg):
@@ -129,7 +156,20 @@ class Playlist(BotModule):
 
     async def __clear(self, ctx, arg):
         self.queue.clear()
-        await self.send_back(ctx, 'Playlist is cleared')
+        await self.react_yes(ctx)
+
+    async def __sort(self, ctx, arg):
+        self.queue.sort(key=lambda d: d['name'])
+        await self.react_yes(ctx)
+
+    async def __next(self, ctx, arg):
+        if len(arg) < 1:
+            await self.send_back(ctx, 'Song index needed')
+        else:
+            song = await self.__get_song(ctx, arg[0], self.queue)
+            if song is not None:
+                self.queue.insert(0, self.queue.pop(self.queue.index(song)))
+                await self.react_yes(ctx)
 
     # Public method
 
@@ -159,3 +199,11 @@ class Playlist(BotModule):
         async def clear(ctx, arg):
             await self.__clear(ctx, arg)
         self.add_func('clear', clear)
+
+        async def sort(ctx, arg):
+            await self.__sort(ctx, arg)
+        self.add_func('sort', sort)
+
+        async def _next(ctx, arg):
+            await self.__next(ctx, arg)
+        self.add_func('next', _next)
